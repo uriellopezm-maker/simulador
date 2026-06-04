@@ -1,0 +1,836 @@
+[index.html](https://github.com/user-attachments/files/28609911/index.html)
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Estudio Profesional - LGE, SAAE, Campos, CTE y Perfiles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .draggable {
+            cursor: grab;
+            transition: all 0.2s ease;
+            user-select: none;
+            font-size: 0.825rem;
+            line-height: 1.3;
+        }
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(0.97);
+        }
+        .draggable.selected-to-move {
+            border-color: #4f46e5 !important;
+            background-color: #e0e7ff !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+        }
+        .drop-zone {
+            min-height: 200px;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            background-color: #f0fdf4;
+            border-color: #22c55e;
+            transform: translateY(-2px);
+        }
+        .correct {
+            border-color: #22c55e !important;
+            background-color: #f0fdf4 !important;
+            color: #14532d !important;
+        }
+        .incorrect {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            color: #7f1d1d !important;
+        }
+        /* Scrollbar styling for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans flex flex-col justify-between text-slate-900">
+    <div class="max-w-7xl mx-auto p-4 md:p-6 w-full flex-grow">
+        <!-- Header Principal -->
+        <header class="text-center mb-6">
+            <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Herramienta de Memorización Profesional</span>
+            <h1 class="text-3xl font-extrabold text-slate-900 mt-2 tracking-tight">Simulador para Exámenes de Oposición y Promoción</h1>
+            <p class="text-slate-600 mt-1 max-w-2xl mx-auto text-sm md:text-base">Domina de manera literal la Ley General de Educación, los Lineamientos del SAAE, los Campos Formativos, las normas del CTE y el Perfil de Egreso.</p>
+        </header>
+
+        <!-- Selector de Módulos (7 Opciones Flexibles) -->
+        <div class="flex flex-wrap justify-center gap-2 mb-6 bg-slate-200 p-1.5 rounded-xl max-w-7xl mx-auto">
+            <button id="btn-mod-lge" onclick="switchModule('lge')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center">
+                Mód. 1: LGE
+            </button>
+            <button id="btn-mod-saae" onclick="switchModule('saae')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 2: SAAE (Ciclo)
+            </button>
+            <button id="btn-mod-saae-actores" onclick="switchModule('saae-actores')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 3: SAAE (Actores)
+            </button>
+            <button id="btn-mod-saae-fundamentos" onclick="switchModule('saae-fundamentos')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 4: SAAE (Bases)
+            </button>
+            <button id="btn-mod-campos-formativos" onclick="switchModule('campos-formativos')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 5: Campos
+            </button>
+            <button id="btn-mod-cte" onclick="switchModule('cte')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 6: CTE
+            </button>
+            <button id="btn-mod-fines-perfiles" onclick="switchModule('fines-perfiles')" class="py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center">
+                Mód. 7: Fines y Perfil
+            </button>
+        </div>
+
+        <!-- Panel de Control del Juego -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+            <div class="text-center md:text-left">
+                <h2 id="current-module-title" class="text-lg font-bold text-slate-800">Cargando módulo...</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Tip: Puedes arrastrar los elementos o hacer clic en uno de ellos y luego en su categoría de destino para ordenarlos fácilmente.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full md:w-auto justify-center">
+                <div class="bg-slate-100 px-4 py-2 rounded-lg text-xs font-bold text-slate-700 flex items-center">
+                    Progreso: <span id="progress-indicator" class="ml-1.5 text-indigo-600">0/0 clasificados</span>
+                </div>
+                <button onclick="checkResults()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-sm">Validar Respuestas</button>
+                <button onclick="resetGame()" class="bg-slate-200 text-slate-700 px-5 py-2 rounded-lg text-xs font-bold hover:bg-slate-300 transition">Reiniciar</button>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 1: LGE) -->
+        <div id="container-lge" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div id="cat-derechos" class="drop-zone border-2 border-dashed border-blue-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-derechos')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-blue-800 text-xs uppercase tracking-wide">Derechos (Art. 128)</h3>
+                    <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">11 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-obligaciones" class="drop-zone border-2 border-dashed border-green-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-obligaciones')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-green-800 text-xs uppercase tracking-wide">Obligaciones (Art. 129)</h3>
+                    <span class="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">6 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-asociaciones" class="drop-zone border-2 border-dashed border-amber-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-asociaciones')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-amber-800 text-xs uppercase tracking-wide">Asoc. de Padres</h3>
+                    <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">10 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-consejos" class="drop-zone border-2 border-dashed border-purple-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-consejos')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-purple-800 text-xs uppercase tracking-wide">Consejos Participación</h3>
+                    <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">8 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 2: SAAE Ciclo Escolar) -->
+        <div id="container-saae" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
+            <div id="cat-saae-previo" class="drop-zone border-2 border-dashed border-sky-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-saae-previo')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-sky-800 text-xs uppercase tracking-wide">Previo al Inicio</h3>
+                    <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">3 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-saae-inicio" class="drop-zone border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-saae-inicio')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-emerald-800 text-xs uppercase tracking-wide">Al Inicio del Ciclo</h3>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">4 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-saae-durante" class="drop-zone border-2 border-dashed border-rose-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-saae-durante')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-rose-800 text-xs uppercase tracking-wide">Durante el Ciclo</h3>
+                    <span class="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">3 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-saae-antes" class="drop-zone border-2 border-dashed border-teal-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-saae-antes')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-teal-800 text-xs uppercase tracking-wide">Antes de Finalizar</h3>
+                    <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold">2 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 3: SAAE Actores y Funciones) -->
+        <div id="container-saae-actores" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 hidden">
+            <div id="cat-act-supervisor" class="drop-zone border-2 border-dashed border-indigo-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-act-supervisor')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-indigo-800 text-xs uppercase tracking-wide">Supervisor</h3>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">9 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-act-atp" class="drop-zone border-2 border-dashed border-teal-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-act-atp')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-teal-800 text-xs uppercase tracking-wide">Asesor Técnico Pedagógico (ATP)</h3>
+                    <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold">9 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-act-at" class="drop-zone border-2 border-dashed border-orange-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-act-at')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-orange-800 text-xs uppercase tracking-wide">Asesor Técnico (Director)</h3>
+                    <span class="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">5 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 4: SAAE Objetivos y Características) -->
+        <div id="container-saae-fundamentos" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 hidden">
+            <div id="cat-fund-objetivos" class="drop-zone border-2 border-dashed border-cyan-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-fund-objetivos')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-cyan-800 text-xs uppercase tracking-wide">Objetivos del SAAE</h3>
+                    <span class="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full font-bold">4 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-fund-caracteristicas" class="drop-zone border-2 border-dashed border-fuchsia-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-fund-caracteristicas')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-fuchsia-800 text-xs uppercase tracking-wide">Características del SAAE</h3>
+                    <span class="text-[10px] bg-fuchsia-100 text-fuchsia-800 px-2 py-0.5 rounded-full font-bold">9 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 5: Campos Formativos) -->
+        <div id="container-campos-formativos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
+            <div id="cat-campos-lenguajes" class="drop-zone border-2 border-dashed border-sky-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-campos-lenguajes')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-sky-800 text-xs uppercase tracking-wide">Lenguajes</h3>
+                    <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">4 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-campos-saberes" class="drop-zone border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-campos-saberes')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-emerald-800 text-xs uppercase tracking-wide">Saberes y Pensamiento Científico</h3>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">6 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-campos-etica" class="drop-zone border-2 border-dashed border-rose-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-campos-etica')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-rose-800 text-xs uppercase tracking-wide">Ética, Naturaleza y Sociedades</h3>
+                    <span class="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">6 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-campos-humano" class="drop-zone border-2 border-dashed border-fuchsia-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-campos-humano')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-fuchsia-800 text-xs uppercase tracking-wide">De lo Humano y lo Comunitario</h3>
+                    <span class="text-[10px] bg-fuchsia-100 text-fuchsia-800 px-2 py-0.5 rounded-full font-bold">10 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 6: CTE Propósitos y Funciones) -->
+        <div id="container-cte" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 hidden">
+            <div id="cat-cte-propositos" class="drop-zone border-2 border-dashed border-cyan-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-cte-propositos')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-cyan-800 text-xs uppercase tracking-wide">Propósitos del CTE</h3>
+                    <span class="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full font-bold">8 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-cte-funciones" class="drop-zone border-2 border-dashed border-orange-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-cte-funciones')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-orange-800 text-xs uppercase tracking-wide">Funciones del CTE</h3>
+                    <span class="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">11 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Categorías de Destino (Módulo 7: Fines y Perfil - NUEVO) -->
+        <div id="container-fines-perfiles" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 hidden">
+            <div id="cat-fines-lge" class="drop-zone border-2 border-dashed border-blue-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-fines-lge')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-blue-800 text-xs uppercase tracking-wide">Fines de la Educación (LGE)</h3>
+                    <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">10 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-fines-perfil" class="drop-zone border-2 border-dashed border-emerald-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-fines-perfil')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-emerald-800 text-xs uppercase tracking-wide">Perfil de Egreso (Plan 2022)</h3>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">10 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+
+            <div id="cat-fines-lgdnna" class="drop-zone border-2 border-dashed border-indigo-300 rounded-xl p-4 bg-white flex flex-col" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" onclick="handleZoneClick(event, 'cat-fines-lgdnna')">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-bold text-indigo-800 text-xs uppercase tracking-wide">Fines de Educación (LGDNNA)</h3>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">11 elementos</span>
+                </div>
+                <div class="space-y-2 flex-grow content-container"></div>
+            </div>
+        </div>
+
+        <!-- Banco de Elementos -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span>Elementos Pendientes de Clasificar</span>
+                <span id="elements-left" class="bg-indigo-100 text-indigo-800 text-[10px] px-2.5 py-0.5 rounded-full">0</span>
+            </h3>
+            <div id="bank" class="flex flex-wrap gap-3 p-1 min-h-[120px] bg-slate-50 border border-dashed border-slate-200 rounded-xl" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="handleZoneClick(event, 'bank')">
+                <!-- Se inyectan dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer de información -->
+    <footer class="mt-8 bg-slate-800 text-slate-400 py-4 text-center text-xs w-full">
+        <p>© 2026 Simulador Pedagógico LGE, SAAE, Campos Formativos, CTE & Perfiles. Material preparado para estudio intensivo sin pistas estructurales.</p>
+    </footer>
+
+    <script>
+        // DATOS MÓDULO 1: LEY GENERAL DE EDUCACIÓN (35 elementos)
+        const lgeData = [
+            // DERECHOS (11)
+            { id: 1, cat: 'cat-derechos', text: 'Obtener inscripción en escuelas públicas para que sus hijas, hijos o pupilos menores de dieciocho años, que satisfagan los requisitos aplicables, reciban la educación preescolar, la primaria, la secundaria, la media superior y, en su caso, la educación inicial, en concordancia con los espacios disponibles para cada tipo educativo;' },
+            { id: 2, cat: 'cat-derechos', text: 'Participar activamente con las autoridades de la escuela en la que estén inscritos sus hijas, hijos o pupilos menores de dieciocho años, en cualquier problema relacionado con la educación de éstos, a fin de que, en conjunto, se aboquen a su solución;' },
+            { id: 3, cat: 'cat-derechos', text: 'Colaborar con las autoridades escolares, al menos una vez al mes, para la superación de los educandos y en el mejoramiento de los establecimientos educativos;' },
+            { id: 4, cat: 'cat-derechos', text: 'Formar parte de las asociaciones de madres y padres de familia y de los consejos de participación escolar o su equivalente a que se refiere esta Ley;' },
+            { id: 5, cat: 'cat-derechos', text: 'Opinar, en los casos de la educación que impartan los particulares, en relación con las contraprestaciones que las escuelas fijen;' },
+            { id: 6, cat: 'cat-derechos', text: 'Conocer el nombre del personal docente y empleados adscritos en la escuela en la que estén inscritos sus hijas, hijos o pupilos, misma que será proporcionada por la autoridad escolar;' },
+            { id: 7, cat: 'cat-derechos', text: 'Conocer los criterios y resultados de las evaluaciones de la escuela a la que asistan sus hijas, hijos o pupilos;' },
+            { id: 8, cat: 'cat-derechos', text: 'Conocer de los planes y programas de estudio proporcionados por el plantel educativo, sobre los cuales podrán emitir su opinión;' },
+            { id: 9, cat: 'cat-derechos', text: 'Conocer el presupuesto asignado a cada escuela, así como su aplicación y los resultados de su ejecución;' },
+            { id: 10, cat: 'cat-derechos', text: 'Conocer la situación académica y conducta de sus hijas, hijos o pupilos en la vida escolar, y' },
+            { id: 11, cat: 'cat-derechos', text: 'Manifestar, de ser el caso, su inconformidad ante las autoridades educativas correspondientes, sobre cualquier irregularidad dentro del plantel educativo donde estén inscritas sus hijas, hijos o pupilos menores de dieciocho años y sobre las condiciones físicas de las escuelas' },
+            
+            // OBLIGACIONES (6)
+            { id: 12, cat: 'cat-obligaciones', text: 'Hacer que sus hijas, hijos o pupilos menores de dieciocho años, reciban la educación preescolar, la primaria, la secundaria, la media superior y, en su caso, la inicial;' },
+            { id: 13, cat: 'cat-obligaciones', text: 'Participar en el proceso educativo de sus hijas, hijos o pupilos menores de dieciocho años, al revisar su progreso, desempeño y conducta, velando siempre por su bienestar y desarrollo;' },
+            { id: 14, cat: 'cat-obligaciones', text: 'Colaborar con las instituciones educativas en las que estén inscritos sus hijas, hijos o pupilos, en las actividades que dichas instituciones realicen;' },
+            { id: 15, cat: 'cat-obligaciones', text: 'Informar a las autoridades educativas, los cambios que se presenten en la conducta y actitud de los educandos, para que se apliquen los estudios correspondientes, con el fin de determinar las posibles causas;' },
+            { id: 16, cat: 'cat-obligaciones', text: 'Acudir a los llamados de las autoridades educativas y escolares relacionados con la revisión del progreso, desempeño y conducta de sus hijas, hijos o pupilos menores de dieciocho años, y' },
+            { id: 17, cat: 'cat-obligaciones', text: 'Promover la participación de sus hijas, hijos o pupilos menores de dieciocho años en la práctica de actividades físicas, de recreación, deportivas y de educación física dentro y fuera de los planteles educativos, como un medio de cohesión familiar y comunitaria.' },
+
+            // ASOCIACIONES (10)
+            { id: 18, cat: 'cat-asociaciones', text: 'Representar ante las autoridades escolares los intereses que en materia educativa sean comunes a los asociados;' },
+            { id: 19, cat: 'cat-asociaciones', text: 'Colaborar para una mejor integración de la comunidad escolar, así como en el mejoramiento de los planteles;' },
+            { id: 20, cat: 'cat-asociaciones', text: 'Informar a las autoridades educativas y escolares sobre cualquier irregularidad de que sean objeto los educandos;' },
+            { id: 21, cat: 'cat-asociaciones', text: 'Propiciar la colaboración de los docentes, madres y padres de familia o tutores, para salvaguardar la integridad de los integrantes de la comunidad educativa;' },
+            { id: 22, cat: 'cat-asociaciones', text: 'Conocer de las acciones educativas y de prevención que realicen las autoridades para que los educandos, conozcan y detecten la posible comisión de hechos delictivos que les puedan perjudicar;' },
+            { id: 23, cat: 'cat-asociaciones', text: 'Sensibilizar a la comunidad, mediante la divulgación de material que prevenga la comisión de delitos en agravio de los educandos. Así como también, de elementos que procuren la defense de los derechos de las víctimas de tales delitos;' },
+            { id: 24, cat: 'cat-asociaciones', text: 'Estimular, promover y apoyar actividades extraescolares que complementen y respalden la formación de los educandos;' },
+            { id: 25, cat: 'cat-asociaciones', text: 'Gestionar el mejoramiento de las condiciones de los planteles educativos ante las autoridades correspondientes;' },
+            { id: 26, cat: 'cat-asociaciones', text: 'Alentar el interés familiar y comunitario para el desempeño del educando, y' },
+            { id: 27, cat: 'cat-asociaciones', text: 'Proponer las medidas que estimen conducentes para alcanzar los objetivos señalados en las fracciones anteriores.' },
+
+            // CONSEJOS (8)
+            { id: 28, cat: 'cat-consejos', text: 'Coadyuvar para que los resultados de las evaluaciones al Sistema Educativo Nacional contribuyan a la mejora continua de la educación, en los términos del artículo 136 de esta Ley;' },
+            { id: 29, cat: 'cat-consejos', text: 'Proponer estímulos y reconocimientos de carácter social a alumnos, docentes, directivos y empleados de la escuela, que propicien la vinculación con la comunidad, con independencia de los que se prevean en la Ley General del Sistema para la Carrera de las Maestras y los Maestros;' },
+            { id: 30, cat: 'cat-consejos', text: 'Coadyuvar en temas que permitan la salvaguarda del libre desarrollo de la personalidad, integridad y derechos humanos de la comunidad educativa;' },
+            { id: 31, cat: 'cat-consejos', text: 'Contribuir a reducir las condiciones sociales adversas que influyan en la educación, a través de proponer acciones específicas para su atención;' },
+            { id: 32, cat: 'cat-consejos', text: 'Llevar a cabo las acciones de participación, coordination y difusión necesarias para la protección civil y la emergencia escolar, considerando las características y necesidades de las personas con discapacidad, así como el desarrollo de planes personales de evacuación que correspondan con el Atlas de Riesgos de la localidad en que se encuentren;' },
+            { id: 33, cat: 'cat-consejos', text: 'Promover cooperativas con la participación de la comunidad educativa, las cuales tendrán un compromiso para fomentar estilos de vida saludables en la alimentación de los educandos. Su funcionamiento se apegará a los criterios de honestidad, integridad, transparencia y rendición de cuentas en su administración. La Secretaría emitirá los lineamientos para su operación, de conformidad con las disposiciones aplicables;' },
+            { id: 34, cat: 'cat-consejos', text: 'Coadyuvar en la dignificación de los planteles educativos, a través del Comité Escolar de Administración Participativa, de acuerdo con los lineamientos que emita la Secretaría, y' },
+            { id: 35, cat: 'cat-consejos', text: 'Realizar actividades encaminadas al beneficio de la propia escuela.' }
+        ];
+
+        // DATOS MÓDULO 2: SAAE CICLO ESCOLAR (12 elementos)
+        const saaeData = [
+            // PREVIO AL INICIO (3)
+            { id: 101, cat: 'cat-saae-previo', text: 'Seleccionarán al personal directivo que tendrá funciones adicionales de asesoría técnica, así como al personal docente que realizará funciones de asesoría técnica pedagógica o de tutoría, conforme a las Disposiciones del proceso de selección y desarrollo de las funciones de asesoría y acompañamiento.' },
+            { id: 102, cat: 'cat-saae-previo', text: 'Propondrán, con base en el diálogo con las autoridades educativas de las entidades federativas, las metas, los objetivos y las acciones a llevar a cabo en el marco del SAAE en su zona escolar, para la atención a las necesidades técnicas pedagógicas de las escuelas identificadas en el ciclo escolar inmediato anterior.' },
+            { id: 103, cat: 'cat-saae-previo', text: 'Establecerán formas de organización al interior de la supervisión de zona escolar, que permitan el logro de los objetivos del SAAE y su articulación con otras acciones de mejora, conforme a las orientaciones de la autoridad educativa de la entidad federativa.' },
+            
+            // AL INICIO DEL CICLO (4)
+            { id: 104, cat: 'cat-saae-inicio', text: 'Revisarán con el CTZ las metas, los objetivos y las acciones propuestas para el desarrollo del SAAE, a fin de considerar la opinión de directivos, maestras, maestros y técnicos docentes, y adaptar estos elementos de la planeación a las condiciones, necesidades y culturas escolares.' },
+            { id: 105, cat: 'cat-saae-inicio', text: 'Establecerán acuerdos con los directores escolares para dar acompañamiento en las escuelas que lo requieran (escuelas de atención prioritaria) y establecerán la estrategia conveniente para proporcionarlo.' },
+            { id: 106, cat: 'cat-saae-inicio', text: 'Elaborarán el plan de trabajo o equivalente de la zona escolar, considerando los objetivos, las metas and las acciones para la operación del SAAE, con base en los acuerdos del CTZ y las indicaciones que formule la autoridad educativa de la entidad federativa.' },
+            { id: 107, cat: 'cat-saae-inicio', text: 'Proporcionarán información al equipo técnico estatal sobre las escuelas que recibirán asesoría, acompañamiento y tutoría, y sobre sus necesidades de atención.' },
+            
+            // DURANTE EL CICLO (3)
+            { id: 108, cat: 'cat-saae-durante', text: 'Llevarán a cabo acciones de asesoría, acompañamiento y tutoría en los ámbitos de intervención que establecen los presentes Lineamientos, según las necesidades técnicas pedagógicas de las escuelas. Estas acciones contemplan la visita continua a los planteles escolares, la observación del trabajo que se realiza en las aulas y el diálogo respetuoso con los diferentes actores educativos, en un ambiente de comprensión y colaboración.' },
+            { id: 109, cat: 'cat-saae-durante', text: 'Llevarán un registro interno de las acciones de asesoría, acompañamiento y tutoría realizadas, los avances y los retos enfrentados.' },
+            { id: 110, cat: 'cat-saae-durante', text: 'Colaborarán con el equipo técnico estatal proporcionando información sobre los procesos de asesoría, acompañamiento y tutoría que se desarrollan en el marco del SAAE.' },
+            
+            // ANTES DE FINALIZAR (2)
+            { id: 111, cat: 'cat-saae-antes', text: 'Las autoridades educativas de las entidades federativas a través de las supervisiones de zona escolar, de los CTZ y de los CTE, valorarán las acciones realizadas por el SAAE, establecerán de manera dialógica y colaborativa con estos actores, nuevos retos y metas para mejorar la organización y operación del SAAE, y tomarán las decisiones que aseguren la mejora continua de las escuelas y las comunidades, y redes de aprendizaje en la entidad federativa en el ciclo escolar siguiente.' },
+            { id: 112, cat: 'cat-saae-antes', text: 'Las supervisiones de zona escolar elaborarán un reporte breve sobre el desarrollo del SAAE en el ciclo escolar, para uso interno y de las autoridades educativas de las entidades federativas, que contenga: principales necesidades detectadas, atendidas y las que se considerarán en el siguiente ciclo escolar, incluyendo sugerencias de mejora.' }
+        ];
+
+        // DATOS MÓDULO 3: SAAE ACTORES Y FUNCIONES (23 elementos)
+        const saaeActoresData = [
+            // SUPERVISOR (9)
+            { id: 201, cat: 'cat-act-supervisor', text: 'Establecer comunicación con los directivos escolares para visitar a las escuelas y organizar, de manera conjunta, los servicios de asesoría, acompañamiento y tutoría en el marco del SAAE, así como para realizar las actividades inherentes a la función de supervisión.' },
+            { id: 202, cat: 'cat-act-supervisor', text: 'Gestionar las acciones del SAAE con oportunidad, a fin de propiciar el logro de sus objetivos, atendiendo las necesidades técnicas pedagógicas de las escuelas.' },
+            { id: 203, cat: 'cat-act-supervisor', text: 'Determinar, en colaboración con los ATP, AT y los directivos escolares, los planteles y el personal docente, técnico docente y directivo al que brindarán asesoría y acompañamiento en la zona, conforme a las necesidades técnicas pedagógicas identificadas en el programa escolar de mejora continua de los planteles.' },
+            { id: 204, cat: 'cat-act-supervisor', text: 'Asegurar que las maestras, los maestros y los técnicos docentes de nuevo ingreso reciban tutoría por dos años consecutivos en la modalidad que más convenga, según el contexto en que labora.' },
+            { id: 205, cat: 'cat-act-supervisor', text: 'Participar en las acciones que lleve a cabo la autoridad educativa de la entidad federativa, con motivo de la implementación, seguimiento y mejora del SAAE, incluyendo la capacitación que para tal efecto se brinde.' },
+            { id: 206, cat: 'cat-act-supervisor', text: 'Establecer comunicación y acuerdos con diferentes áreas de la autoridad educativa de la entidad federativa, a fin de vincular las acciones del SAAE con otras acciones y programas de mejora educativa, o bien, para compartir recursos con otras supervisiones de zona escolar.' },
+            { id: 207, cat: 'cat-act-supervisor', text: 'Planificar, coordinar, desarrollar, dar seguimiento, evaluar y llevar un registro interno de las acciones relativas al SAAE en el ámbito de su competencia, conforme a los presentes Lineamientos.' },
+            { id: 208, cat: 'cat-act-supervisor', text: 'Articular las acciones del SAAE con otras actividades que desarrolla la supervisión de zona escolar, teniendo en cuenta las necesidades de las escuelas y las metas de la propia supervisión y de la educación básica en la entidad federativa.' },
+            { id: 209, cat: 'cat-act-supervisor', text: 'Informar a la autoridad educativa de la entidad federativa acerca de las necesidades técnicas pedagógicas de las escuelas que rebasan el ámbito de competencia de la supervisión de zona escolar, y dar seguimiento a la atención proporcionada por dicha autoridad.' },
+
+            // ASESOR TÉCNICO PEDAGÓGICO - ATP (9)
+            { id: 210, cat: 'cat-act-atp', text: 'Participar en la planeación, la organización, el desarrollo, el seguimiento y la evaluación del SAAE en la zona escolar.' },
+            { id: 211, cat: 'cat-act-atp', text: 'Proponer al supervisor de zona escolar los planteles y el personal docente y técnico docente, a quienes se les brindará asesoría y acompañamiento, conforme a las necesidades técnicas pedagógicas que se identifiquen en las escuelas.' },
+            { id: 212, cat: 'cat-act-atp', text: 'Elaborar, desarrollar, dar seguimiento y evaluar, en colaboración con los asesorados, su plan de asesoría técnica pedagógica, conforme a los objetivos del SAAE y las necesidades de las escuelas, y de las maestras y los maestros de la zona escolar.' },
+            { id: 213, cat: 'cat-act-atp', text: 'Asesorar y acompañar en aspectos técnicos pedagógicos, a maestras y maestros, y técnicos docentes de forma individualizada y colectiva, en colaboración con otros actores educativos, con el fin de coadyuvar, en su ámbito de competencia, a una formación docente orientada a la autonomía profesional, el máximo logro en el aprendizaje y desarrollo integral de los alumnos, considerando las necesidades de formación de las maestras, los maestros y técnicos docentes, y las características de los contextos socioculturales y lingüísticos en que se ubican las escuelas.' },
+            { id: 214, cat: 'cat-act-atp', text: 'Visitar a las escuelas para asesorar y acompañar al personal docente y técnico docente, y observar el trabajo que realizan con los alumnos, con la intención de obtener información que contribuya al fortalecimiento de sus prácticas profesionales, conforme a las necesidades del personal docente y técnico docente en servicio, el plan de trabajo de la zona escolar y la disponibilidad de personal para el cumplimiento de esta responsabilidad.' },
+            { id: 215, cat: 'cat-act-atp', text: 'Orientar a maestras y maestros en el diseño y desarrollo de actividades que favorecen la formación integral de los alumnos, relacionada con el desarrollo del pensamiento matemático, la comprensión lectora, la expresión oral y escrita, el conocimiento científico y el tecnológico, el pensamiento crítico, la expresión artística, el cuidado de la salud física, mental y emocional, una cultura de paz y la protección del medio ambiente.' },
+            { id: 216, cat: 'cat-act-atp', text: 'Analizar y reflexionar, junto con las maestras, los maestros y los técnicos docentes asesorados, sobre el proceso de asesoría para fortalecerlo con nuevas acciones.' },
+            { id: 217, cat: 'cat-act-atp', text: 'Impulsar la conformación y desarrollo de redes y comunidades de aprendizaje en el ámbito de la zona escolar, así como a nivel regional o estatal, según sus posibilidades.' },
+            { id: 218, cat: 'cat-act-atp', text: 'Informar de manera permanente a la supervisión de zona escolar acerca de los avances y dificultades en la asesoría y acompañamiento a las escuelas y al personal docente, de modo que se tomen decisiones que fortalezcan estos procesos.' },
+
+            // ASESOR TÉCNICO CON FUNCIONES DE DIRECCIÓN - AT (5)
+            { id: 219, cat: 'cat-act-at', text: 'Acordar con el supervisor de zona escolar, el personal directivo a quien brindará asesoría y acompañamiento en la zona escolar, conforme a las necesidades identificadas en las escuelas.' },
+            { id: 220, cat: 'cat-act-at', text: 'Elaborar, desarrollar, dar seguimiento y evaluar, en coordinación con los directivos escolares, las acciones de asesoría técnica conforme a las características y necesidades de las escuelas y de sus directivos, en el marco del SAAE y apegadas a los presentes Lineamientos.' },
+            { id: 221, cat: 'cat-act-at', text: 'Colaborar con el personal de la supervisión en la generación y fomento de redes y comunidades de aprendizaje entre directivos de la zona escolar.' },
+            { id: 222, cat: 'cat-act-at', text: 'Analizar y reflexionar, junto con los directivos asesorados, sobre el proceso de asesoría, a fin de identificar áreas de mejora y tomar decisiones al respecto.' },
+            { id: 223, cat: 'cat-act-at', text: 'Informar de manera permanente a la supervisión de zona escolar acerca de los avances y dificultades en la asesoría y acompañamiento a las escuelas y a sus directivos, de modo que se tomen decisiones que fortalezcan estos procesos.' }
+        ];
+
+        // DATOS MÓDULO 4: SAAE OBJETIVOS Y CARACTERÍSTICAS (13 elementos)
+        const saaeFundamentosData = [
+            // OBJETIVOS (4)
+            { id: 301, cat: 'cat-fund-objetivos', text: 'Mejorar las prácticas de las maestras, los maestros, técnicos docentes y directivos escolares, partiendo de las experiencias y los saberes individuales y colectivos, así como de las necesidades de aprendizaje de los alumnos, para impulsar la toma de decisiones reflexivas e informadas en el trabajo del aula y la escuela, en un marco de equidad, inclusión y excelencia educativa.' },
+            { id: 302, cat: 'cat-fund-objetivos', text: 'Apoyar a las maestras, los maestros y técnicos docentes en su proceso de incorporación al servicio público educativo en el fortalecimiento de sus competencias para el trabajo con los alumnos en contextos y condiciones específicos, su autonomía profesional, participación en la escuela, comunicación con las familias de los alumnos y aprendizaje profesional permanente.' },
+            { id: 303, cat: 'cat-fund-objetivos', text: 'Contribuir a la transformación de las escuelas, con base en lo establecido en el programa escolar de mejora continua, y el impulso del liderazgo directivo, del CTE y del trabajo colaborativo de la comunidad escolar.' },
+            { id: 304, cat: 'cat-fund-objetivos', text: 'Organizar las acciones de asesoría, acompañamiento y tutoría de la supervisión de zona escolar como un servicio de apoyo a las escuelas, sistemático y continuo, para la mejora de las prácticas profesionales.' },
+
+            // CARACTERÍSTICAS (9)
+            { id: 305, cat: 'cat-fund-caracteristicas', text: 'Organiza el trabajo técnico pedagógico de la supervisión de zona escolar.' },
+            { id: 306, cat: 'cat-fund-caracteristicas', text: 'Dirige las acciones de asesoría, acompañamiento y tutoría a las escuelas de la zona al logro de los objetivos y metas que estas establecen en su programa escolar de mejora continua.' },
+            { id: 307, cat: 'cat-fund-caracteristicas', text: 'Es planificado, continuo y organizado de manera sistemática, cuyas acciones se desarrollan, se les da seguimiento y evalúan a lo largo del ciclo escolar.' },
+            { id: 308, cat: 'cat-fund-caracteristicas', text: 'Es dialógico, al utilizar la discusión académica, el aprendizaje entre pares y el intercambio pedagógico como herramientas para ampliar la comprensión, la deliberación y la toma de decisiones orientadas hacia la mejora de las prácticas educativas y de los aprendizajes de los alumnos.' },
+            { id: 309, cat: 'cat-fund-caracteristicas', text: 'Es situado y dirigido al cambio educativo, al establecer retos de mejora acordes con las condiciones y el contexto de cada escuela, sus posibilidades, los saberes y las características del colectivo docente y la cultura escolar.' },
+            { id: 310, cat: 'cat-fund-caracteristicas', text: 'Es formativo, en tanto implica el aprendizaje entre pares dirigido al fortalecimiento de valores, actitudes, conocimientos y habilidades profesionales de las maestras, los maestros, los técnicos docentes y los directivos escolares.' },
+            { id: 311, cat: 'cat-fund-caracteristicas', text: 'Atiende la diversidad de situaciones y contextos, al propiciar que el colectivo docente favorezca la disminución de las barreras para el aprendizaje y la participación que enfrentan los alumnos; al tiempo que prioriza la atención de grupos y personas en situación de vulnerabilidad, con énfasis en la población indígena; migrante; con discapacidad y dificultades severas en conducta, comunicación y aprendizaje; así como de las escuelas ubicadas en zonas de alta marginación, multigrado y telesecundarias.' },
+            { id: 312, cat: 'cat-fund-caracteristicas', text: 'Coloca en el centro de la asesoría o tutoría alcanzar el máximo logro de aprendizaje de los alumnos, al tiempo que se articula con acciones de la escuela dirigidas a la atención del rezago educativo.' },
+            { id: 313, cat: 'cat-fund-caracteristicas', text: 'Genera redes y comunidades de aprendizaje que fortalecen las competencias profesionales de sus participantes y la mejora del servicio educativo de las escuelas de la zona, al propiciar que estas compartan experiencias diversas y problemas comunes para analizarlos conjuntamente, de modo que se impulsen y adopten prácticas innovadoras y creativas.' }
+        ];
+
+        // DATOS MÓDULO 5: CAMPOS FORMATIVOS (26 elementos)
+        const camposData = [
+            // LENGUAJES (4)
+            { id: 401, cat: 'cat-campos-lenguajes', text: 'La expresión y la comunicación de sus formas de ser y estar en el mundo para conformar y manifestar su identidad personal y colectiva, al tiempo que conocen, reconocen y valoran la diversidad étnica, cultural, lingüística, sexual, de género, social, de capacidades, necesidades, condiciones, intereses y formas de pensar, que constituye a nuestro país y al mundo; de esta manera se propicia, además, el diálogo intercultural e inclusivo.' },
+            { id: 402, cat: 'cat-campos-lenguajes', text: 'La apropiación progresiva de formas de expresión y comunicación mediante la oralidad, la escucha, lectura, escritura, sensorialidad, percepción y composición de diversas producciones —orales, escritas, sonoras, visuales, corporales o hápticas— para aprender a interpretarlas, elaborarlas, disfrutarlas y utilizarlas con intención, tomando en cuenta la libertad creativa y las convenciones.' },
+            { id: 403, cat: 'cat-campos-lenguajes', text: 'La experimentación creativa y lúdica que provoque el disfrute de los elementos de las artes a partir de la interacción con manifestaciones culturales y artísticas en las que predomine una función estética para apreciarlas, reaccionar de manera afectiva ante ellas e interpretar sus sentidos y significados a través de la intuición, sensibilidad o análisis de sus componentes, además de la posibilidad de considerar información adicional sobre los contextos.' },
+            { id: 404, cat: 'cat-campos-lenguajes', text: 'El establecimiento de vínculos afectivos y el despliegue de herramientas para diversificar las formas de aprendizaje por medio de experiencias artísticas y estéticas como vehículos alternativos de expresión y comunicación de ideas, sueños, experiencias, sentimientos, puntos de vista y reflexiones.' },
+
+            // SABERES Y PENSAMIENTO CIENTÍFICO (6)
+            { id: 405, cat: 'cat-campos-saberes', text: 'La comprensión para explicar procesos y fenómenos naturales en su relación con lo social, los cuales ocurren en el mundo con base en los saberes y el pensamiento científico por medio de indagación, interpretación, experimentación, sistematización, representación con modelos y argumentación de tales fenómenos.' },
+            { id: 406, cat: 'cat-campos-saberes', text: 'El reconocimiento y uso de diversos métodos durante la construcción de conocimientos para contrarrestar la idea de un método único.' },
+            { id: 407, cat: 'cat-campos-saberes', text: 'La toma de decisiones libres, responsables y conscientes orientadas al bienestar individual, familiar y comunitario para una vida saludable.' },
+            { id: 408, cat: 'cat-campos-saberes', text: 'La práctica de relaciones sociales igualitarias e interculturales, así como relaciones que coadyuven a cuidar el medio ambiente y transformar de manera sustentable su comunidad.' },
+            { id: 409, cat: 'cat-campos-saberes', text: 'El acercamiento a los conocimientos científicos y tecnológicos tomando en cuenta que son resultado de actividades humanas interdependientes desarrolladas en un contexto específico, que están en permanente cambio, con alcances y limitaciones, y se emplean según la cultura y las necesidades de la sociedad.' },
+            { id: 410, cat: 'cat-campos-saberes', text: 'La apropiación y el uso del lenguaje científico y técnico como medio de comunicación oral, escrita, gráfica y digital para establecer nuevas relaciones, construir conocimientos y explicar modelos.' },
+
+            // ÉTICA, NATURALEZA Y SOCIEDADES (6)
+            { id: 411, cat: 'cat-campos-etica', text: 'Sentido de pertenencia e identidad personal y colectiva, el cual inicia en el contexto familiar con la lengua, las costumbres, las concepciones del mundo y los estilos de vida que se comparten, y que se amplían al entorno local, nacional, regional y mundial.' },
+            { id: 412, cat: 'cat-campos-etica', text: 'Reconocimiento de las diversas sociedades y culturas para ejercer el pensamiento crítico en torno a sus historias, costumbres, tradiciones, saberes y formas de convivir, y de esta manera, dar significado y valor a su propia cultura y otras.' },
+            { id: 413, cat: 'cat-campos-etica', text: 'Convicciones, principios éticos y valores democráticos como el respeto, la libertad, la justicia, la honestidad, la responsabilidad, la reciprocidad y la empatía, que les sirvan de guía para prácticas personales y colectivas, así como para reflexionar y hacer juicios críticos, tomar decisiones, participar y relacionarse de forma positiva y pacífica con las demás personas.' },
+            { id: 414, cat: 'cat-campos-etica', text: 'Respeto y protección de los derechos humanos conforme avancen en su trayecto educativo y de vida, y conozcan su importancia para la organización de la vida en sociedad, aprendan a defenderlos ante situaciones de desigualdad e injusticia, así como a ejercerlos de manera informada y pacífica; lo que supone exigir su cumplimiento para sí y para todas las personas, respetando todas las diversidades.' },
+            { id: 415, cat: 'cat-campos-etica', text: 'Responsabilidad en el cuidado y conservación de la naturaleza a partir de la concepción de que todas las personas forman parte de ella, y asuman compromisos de bajo impacto ambiental y de sustentabilidad para garantizar el derecho de todas las personas y seres vivos, a un ambiente sano en el presente y futuro.' },
+            { id: 416, cat: 'cat-campos-etica', text: 'Desarrollo de las conciencias histórica y geográfica basadas en el análisis de las transformaciones sociales, naturales, culturales, económicas y políticas ocurridas en su localidad, el país y el mundo en tiempos y espacios determinados para que comprendan que el presente es el resultado de las decisiones y acciones de las sociedades del pasado, y asimismo que el futuro depende de las decisiones y acciones actuales.' },
+
+            // DE LO HUMANO Y LO COMUNITARIO (10)
+            { id: 417, cat: 'cat-campos-humano', text: 'Construyan su identidad personal mediante la exploración de gustos, intereses, necesidades, posibilidades, formas de entender e interactuar en diversos contextos sociales y naturales.' },
+            { id: 418, cat: 'cat-campos-humano', text: 'Conciban la sexualidad como resultado de una construcción cultural conformada por distintas maneras de pensar, representar y entender el cuerpo en su relación con la igualdad de género.' },
+            { id: 419, cat: 'cat-campos-humano', text: 'Desarrollen sus potencialidades (afectivas, motrices, creativas, de interacción y solución de problemas), reconociendo, valorando y respetando las de otras personas.' },
+            { id: 420, cat: 'cat-campos-humano', text: 'Fortalecer capacidades perceptivo, socio y físico-motrices, y las que deriven en el desarrollo creativo de la motricidad en relación con el cuerpo como espacio de cuidado y afecto.' },
+            { id: 421, cat: 'cat-campos-humano', text: 'Reflexionen y comprendan su vida emocional y afectiva, así como la de las demás personas, como elemento constitutivo de relaciones de convivencia y potencial bienestar.' },
+            { id: 422, cat: 'cat-campos-humano', text: 'Promuevan ambientes de convivencia sana y pacífica entre quienes integran la comunidad educativa, identificando aquello que trastoque sus entornos.' },
+            { id: 423, cat: 'cat-campos-humano', text: 'Experimenten la importancia de cuidar, mejorar y preservar la salud, el entorno natural y social, como una responsabilidad individual y colectiva que se presenta ante una vida caracterizada por la incertidumbre.' },
+            { id: 424, cat: 'cat-campos-humano', text: 'Tomen decisiones orientadas a modificar comportamientos y situaciones que violenten su integridad físico-emocional y la de otras personas.' },
+            { id: 425, cat: 'cat-campos-humano', text: 'Actúen en la resolución de situaciones y problemas presentes en distintos contextos, recurriendo a saberes, capacidades y habilidades que se generan a partir del diálogo familias-escuela-comunidad.' },
+            { id: 426, cat: 'cat-campos-humano', text: 'Generen sentido de comunidad y fortalezcan el de pertenencia, y ello incida en su apreciación de la diversidad de identidades para que reconozcan aspectos que comparten con otras personas al participar en la consecución de logros, la apropiación de valores y el diseño de proyectos para el beneficio colectivo.' }
+        ];
+
+        // DATOS MÓDULO 6: CTE PROPÓSITOS Y FUNCIONES (19 elementos)
+        const cteData = [
+            // PROPÓSITOS (8)
+            { id: 501, cat: 'cat-cte-propositos', text: 'Construir un proyecto educativo en cada Escuela cimentado en la diversidad, con el fin de que el Colectivo docente realice sus tareas pensando en las condiciones de desigualdad y los contextos diferenciados, para que se pueda hacer efectivo el derecho humano a la educación de las y los estudiantes de Educación Básica.' },
+            { id: 502, cat: 'cat-cte-propositos', text: 'Priorizar el interés superior de las niñas, niños, adolescentes y jóvenes, en todos los procesos educativos, que les permita formarse como ciudadanas y ciudadanos partícipes en la construcción solidaria de una sociedad democrática con justicia social.' },
+            { id: 503, cat: 'cat-cte-propositos', text: 'Propiciar espacios de formación entre las maestras y los maestros que les permitan ejercer plenamente su autonomía profesional.' },
+            { id: 504, cat: 'cat-cte-propositos', text: 'Deliberar sobre el currículo considerando aquello que es pertinente y necesario de acuerdo con las condiciones concretas de existencia en las que viven y trabajan, tomando como insumo principal sus saberes y experiencia pedagógica.' },
+            { id: 505, cat: 'cat-cte-propositos', text: 'Contextualizar los contenidos de los programas sintéticos para atender las necesidades formativas de las y los estudiantes de acuerdo con la realidad social, territorial, cultural, ambiental, económica y educativa de cada Escuela.' },
+            { id: 506, cat: 'cat-cte-propositos', text: 'Planear, implementar y dar seguimiento a los procesos de mejora continua, priorizando la solución de problemas específicos de la Escuela para responder a la diversidad de contextos atendiendo sus problemáticas, enfocando sus esfuerzos al desarrollo humano integral, al máximo logro de aprendizajes y capacidades de todas las alumnas y los alumnos, contribuyendo al desarrollo de su pensamiento crítico, así como al fortalecimiento de los lazos de la Escuela con la comunidad.' },
+            { id: 507, cat: 'cat-cte-propositos', text: 'Analizar de forma permanente el logro de los aprendizajes y capacidades del alumnado e identificar los retos que debe superar la Escuela para brindar oportunidades de aprendizaje con inclusión, equidad, igualdad de género e interculturalidad.' },
+            { id: 508, cat: 'cat-cte-propositos', text: 'Abordar cualquier tema o proceso educativo que se considere necesario, siempre y cuando esté en función de la mejora continua de las Escuelas, contribuyendo al máximo logro de aprendizaje de los educandos.' },
+
+            // FUNCIONES (11)
+            { id: 509, cat: 'cat-cte-funciones', text: 'Decidir las formas de organización de las sesiones de CTE que mejor atiendan a las características del Colectivo docente, el logro de los propósitos y el cumplimiento de sus funciones.' },
+            { id: 510, cat: 'cat-cte-funciones', text: 'Favorecer el trabajo pedagógico colegiado, así como fomentar espacios de intercambio y de reflexión entre los diferentes integrantes del Colectivo docente.' },
+            { id: 511, cat: 'cat-cte-funciones', text: 'Definir los objetivos, las metas y las acciones para la atención de las prioridades y los problemas educativos identificados por el Colectivo docente y la Comunidad escolar.' },
+            { id: 512, cat: 'cat-cte-funciones', text: 'Elegir a los integrantes del Comité de Planeación y Evaluación.' },
+            { id: 513, cat: 'cat-cte-funciones', text: 'Impulsar el Proceso de Mejora Continua como una práctica permanente en las Escuelas en estrecha vinculación con la comunidad.' },
+            { id: 514, cat: 'cat-cte-funciones', text: 'Tomar decisiones de carácter pedagógico que contribuyan a una educación de excelencia priorizando el máximo logro de los aprendizajes de niñas, niños y adolescentes.' },
+            { id: 515, cat: 'cat-cte-funciones', text: 'Tomar acuerdos para realizar y concretar el Diagnóstico socioeducativo de la escuela, considerando la realidad social, territorial, cultural y educativa de las y los estudiantes.' },
+            { id: 516, cat: 'cat-cte-funciones', text: 'Construir de forma colectiva y, de manera conjunta y coordinada con el Comité de Planeación y Evaluación, el Programa de mejora continua de la Escuela considerando las características particulares de la comunidad.' },
+            { id: 517, cat: 'cat-cte-funciones', text: 'Compartir entre el Colectivo docente, experiencias acerca de las estrategias y metodologías implementadas para desarrollar los contenidos y los procesos de desarrollo de aprendizaje de los programas de estudio, que resulten pertinentes para el contexto en que realizan su labor.' },
+            { id: 518, cat: 'cat-cte-funciones', text: 'Definir estrategias para atender a las y los estudiantes que requieren más apoyo, a partir de la revisión permanente de los resultados de aprendizaje.' },
+            { id: 519, cat: 'cat-cte-funciones', text: 'Tomar decisiones basadas en la información generada en la evaluación de las acciones, metas y los objetivos del Programa de mejora continua.' }
+        ];
+
+        // DATOS MÓDULO 7: FINES Y PERFILES (31 elementos - NUEVO)
+        const finesPerfilesData = [
+            // FINES DE LA EDUCACIÓN LEY GENERAL (10)
+            { id: 601, cat: 'cat-fines-lge', text: 'Contribuir al desarrollo integral y permanente de los educandos, para que ejerzan de manera plena sus capacidades, a través de la mejora continua del Sistema Educativo Nacional;' },
+            { id: 602, cat: 'cat-fines-lge', text: 'Promover el respeto irrestricto de la dignidad humana, como valor fundamental e inalterable de la persona y de la sociedad, a partir de una formación humanista que contribuya a la mejor convivencia social en un marco de respeto por los derechos de todas las personas y la integridad de las familias, el aprecio por la diversidad y la corresponsabilidad con el interés general;' },
+            { id: 603, cat: 'cat-fines-lge', text: 'Inculcar el enfoque de derechos humanos y de igualdad sustantiva, y promover el conocimiento, respeto, disfrute y ejercicio de todos los derechos, con el mismo trato y oportunidades para las personas;' },
+            { id: 604, cat: 'cat-fines-lge', text: 'Fomentar el amor a la Patria, el aprecio por sus culturas, el conocimiento de su historia y el compromiso con los valores, símbolos patrios y las instituciones nacionales;' },
+            { id: 605, cat: 'cat-fines-lge', text: 'Formar a los educandos en la cultura de la paz, el respeto, la tolerancia, los valores democráticos que favorezcan el diálogo constructivo, la solidaridad y la búsqueda de acuerdos que permitan la solución no violenta de conflictos y la convivencia en un marco de respeto a las diferencias;' },
+            { id: 606, cat: 'cat-fines-lge', text: 'Propiciar actitudes solidarias en el ámbito internacional, en la independencia y en la justicia para fortalecer el ejercicio de los derechos de todas las personas, el cumplimiento de sus obligaciones y el respeto entre las naciones;' },
+            { id: 607, cat: 'cat-fines-lge', text: 'Promover la comprensión, el aprecio, el conocimiento y enseñanza de la pluralidad étnica, cultural y lingüística de la nación, el diálogo e intercambio intercultural sobre la base de equidad y respeto mutuo; así como la valoración de las tradiciones y particularidades culturales de las diversas regiones del país;' },
+            { id: 608, cat: 'cat-fines-lge', text: 'Inculcar el respeto por la naturaleza, a través de la generación de capacidades y habilidades que aseguren el manejo integral, la conservación y el aprovechamiento de los recursos naturales, el desarrollo sostenible y la resiliencia frente al cambio climático;' },
+            { id: 609, cat: 'cat-fines-lge', text: 'Fomentar la honestidad, el civismo y los valores necesarios para transformar la vida pública del país, y' },
+            { id: 610, cat: 'cat-fines-lge', text: 'Todos aquellos que contribuyan al bienestar y desarrollo del país.' },
+
+            // RASGOS DEL PERFIL DE EGRESO (10)
+            { id: 611, cat: 'cat-fines-perfil', text: 'Reconocen que son ciudadanas y ciudadanos que pueden ejercer su derecho a una vida digna, a decidir sobre su cuerpo, a construir su identidad personal y colectiva, así como a vivir con bienestar y buen trato, en un marco de libertades y responsabilidades con respecto a ellas mismas y ellos mismos, así como con su comunidad.' },
+            { id: 612, cat: 'cat-fines-perfil', text: 'Viven, reconocen y valoran la diversidad étnica, cultural, lingüística, sexual, política, social y de género del país como rasgos que caracterizan a la nación mexicana.' },
+            { id: 613, cat: 'cat-fines-perfil', text: 'Reconocen que mujeres y hombres son personas que gozan de los mismos derechos, con capacidad de acción, autonomía, decisión para vivir una vida digna, libre de violencia y discriminación.' },
+            { id: 614, cat: 'cat-fines-perfil', text: 'Valoran sus potencialidades cognitivas, físicas y afectivas a partir de las cuales pueden mejorar sus capacidades personales y de la comunidad durante las distintas etapas de su vida.' },
+            { id: 615, cat: 'cat-fines-perfil', text: 'Desarrollan una forma de pensar propia que emplean para analizar y hacer juicios argumentados sobre su realidad familiar, escolar, comunitaria, nacional y mundial; conscientes de la importancia que tiene la presencia de otras personas en su vida y la urgencia de oponerse a cualquier tipo de injusticia, discriminación, racismo o clasismo en cualquier ámbito de su vida.' },
+            { id: 616, cat: 'cat-fines-perfil', text: 'Se perciben a sí mismas y a sí mismos como parte de la naturaleza, conscientes del momento que viven en su ciclo de vida y la importancia de entender que el medio ambiente y su vida personal son parte de la misma trama, por lo que entienden la prioridad de relacionar el cuidado de su alimentación, su salud física, mental, sexual y reproductiva con la salud planetaria desde una visión sustentable y compatible.' },
+            { id: 617, cat: 'cat-fines-perfil', text: 'Interpretan fenómenos, hechos y situaciones históricas, culturales, naturales y sociales a partir de temas diversos e indagan para explicarlos con base en razonamientos, modelos, datos e información con fundamentos científicos y saberes comunitarios, de tal manera que les permitan consolidar su autonomía para plantear y resolver problemas complejos considerando el contexto.' },
+            { id: 618, cat: 'cat-fines-perfil', text: 'Interactúan en procesos de diálogo con respeto y aprecio a la diversidad de capacidades, características, condiciones, necesidades, intereses y visiones al trabajar de manera cooperativa. Son capaces de aprender a su ritmo y respetar el de las demás personas, adquieren nuevas capacidades, construyen nuevas relaciones y asumen roles distintos en un proceso de constante cambio para emprender proyectos personales y colectivos dentro de un mundo en rápida transformación.' },
+            { id: 619, cat: 'cat-fines-perfil', text: 'Intercambian ideas, cosmovisiones y perspectivas mediante distintos lenguajes, con el fin de establecer acuerdos en los que se respeten las ideas propias y las de otras y otros. Dominan habilidades de comunicación básica tanto en su lengua materna como en otras lenguas. Aprovechan los recursos y medios de la cultura digital, de manera ética y responsable para comunicarse, así como obtener información, seleccionarla, organizarla, analizarla y evaluarla.' },
+            { id: 620, cat: 'cat-fines-perfil', text: 'Desarrollan el pensamiento crítico que les permita valorar los conocimientos y saberes de las ciencias y humanidades, reconociendo la importancia que tienen la historia y la cultura para examinar críticamente sus propias ideas y el valor de los puntos de vista de las y los demás como elementos centrales para proponer transformaciones en su comunidad desde una perspectiva solidaria.' },
+
+            // FINES DE LA EDUCACIÓN PARA LEY GENERAL DE NIÑAS, NIÑOS Y ADOLESCENTES (11)
+            { id: 621, cat: 'cat-fines-lgdnna', text: 'Fomentar en niñas, niños y adolescentes los valores fundamentales, la cultura de la paz, la educación cívica y el respeto de la identidad propia, así como a las diferencias culturales y opiniones diversas;' },
+            { id: 622, cat: 'cat-fines-lgdnna', text: 'Desarrollar la personalidad, las aptitudes y las potencialidades de niñas, niños y adolescentes;' },
+            { id: 623, cat: 'cat-fines-lgdnna', text: 'Inculcar a niñas, niños y adolescentes sentimientos de identidad y pertenencia a su escuela, comunidad y nación, así como su participación activa en el proceso educativo y actividades cívicas en términos de las disposiciones aplicables;' },
+            { id: 624, cat: 'cat-fines-lgdnna', text: 'Orientar a niñas, niños y adolescentes respecto a la formación profesional, las oportunidades de empleo y las posibilidades de carrera;' },
+            { id: 625, cat: 'cat-fines-lgdnna', text: 'Apoyar a niñas, niños y adolescentes que sean víctimas de maltrato y la atención especial de quienes se encuentren en situación de riesgo;' },
+            { id: 626, cat: 'cat-fines-lgdnna', text: 'Prevenir el delito y las adicciones, mediante el diseño y ejecución de programas;' },
+            { id: 627, cat: 'cat-fines-lgdnna', text: 'Emprender, en cooperación con quienes ejerzan la patria potestad, tutela o guarda y custodia, así como con grupos de la comunidad, la planificación, organización y desarrollo de actividades extracurriculares que sean de interés para niñas, niños y adolescentes;' },
+            { id: 628, cat: 'cat-fines-lgdnna', text: 'Promover la educación sexual integral conforme a su edad, el desarrollo evolutivo, cognoscitivo y madurez, de las niñas, niños y adolescentes que le permitan a niñas, niños y adolescentes ejercer de manera informada y responsable sus derechos consagrados en la Constitución Política de los Estados Unidos Mexicanos, en las leyes y los Tratados Internacionales de los que el Estado mexicano sea parte;' },
+            { id: 629, cat: 'cat-fines-lgdnna', text: 'Promover el valor de la justicia, de la observancia de la ley y de la igualdad de las personas ante ésta, propiciar la cultura de la legalidad, de la paz, la educación cívica y la no violencia en cualquier tipo de sus manifestaciones, así como el conocimiento de los derechos humanos y el respeto a los mismos;' },
+            { id: 630, cat: 'cat-fines-lgdnna', text: 'Difundir los derechos humanos de niñas, niños y adolescentes y las formas de protección con que cuentan para ejercerlos, e' },
+            { id: 631, cat: 'cat-fines-lgdnna', text: 'Inculcar en niñas, niños y adolescentes el respeto al medio ambiente; así como el respeto, cuidado y procuración del bienestar de los animales.' }
+        ];
+
+        let currentModule = 'lge'; // 'lge', 'saae', 'saae-actores', 'saae-fundamentos', 'campos-formativos', 'cte' o 'fines-perfiles'
+        let currentData = [];
+        let selectedItemElement = null; // Guardará el elemento seleccionado con click
+
+        function switchModule(mod) {
+            currentModule = mod;
+            selectedItemElement = null;
+            
+            const btnLge = document.getElementById('btn-mod-lge');
+            const btnSaae = document.getElementById('btn-mod-saae');
+            const btnSaaeActores = document.getElementById('btn-mod-saae-actores');
+            const btnSaaeFundamentos = document.getElementById('btn-mod-saae-fundamentos');
+            const btnCampos = document.getElementById('btn-mod-campos-formativos');
+            const btnCte = document.getElementById('btn-mod-cte');
+            const btnFinesPerfiles = document.getElementById('btn-mod-fines-perfiles');
+            
+            const containerLge = document.getElementById('container-lge');
+            const containerSaae = document.getElementById('container-saae');
+            const containerSaaeActores = document.getElementById('container-saae-actores');
+            const containerSaaeFundamentos = document.getElementById('container-saae-fundamentos');
+            const containerCampos = document.getElementById('container-campos-formativos');
+            const containerCte = document.getElementById('container-cte');
+            const containerFinesPerfiles = document.getElementById('container-fines-perfiles');
+            
+            const currentTitle = document.getElementById('current-module-title');
+
+            // Apagar todos los botones activos
+            [btnLge, btnSaae, btnSaaeActores, btnSaaeFundamentos, btnCampos, btnCte, btnFinesPerfiles].forEach(b => {
+                b.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 text-slate-700 hover:text-indigo-950 text-center";
+            });
+
+            // Ocultar todos los contenedores
+            [containerLge, containerSaae, containerSaaeActores, containerSaaeFundamentos, containerCampos, containerCte, containerFinesPerfiles].forEach(c => {
+                c.classList.add('hidden');
+            });
+
+            if (mod === 'lge') {
+                currentData = lgeData;
+                currentTitle.innerText = "Módulo 1: Ley General de Educación (Art. 128 y 129)";
+                btnLge.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerLge.classList.remove('hidden');
+            } else if (mod === 'saae') {
+                currentData = saaeData;
+                currentTitle.innerText = "Módulo 2: Operación del SAAE en el Ciclo Escolar";
+                btnSaae.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerSaae.classList.remove('hidden');
+            } else if (mod === 'saae-actores') {
+                currentData = saaeActoresData;
+                currentTitle.innerText = "Módulo 3: Funciones y Responsabilidades de los Actores del SAAE";
+                btnSaaeActores.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerSaaeActores.classList.remove('hidden');
+            } else if (mod === 'saae-fundamentos') {
+                currentData = saaeFundamentosData;
+                currentTitle.innerText = "Módulo 4: Objetivos y Características Metodológicas del SAAE";
+                btnSaaeFundamentos.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerSaaeFundamentos.classList.remove('hidden');
+            } else if (mod === 'campos-formativos') {
+                currentData = camposData;
+                currentTitle.innerText = "Módulo 5: Finalidades de los Campos Formativos (Plan de Estudio 2022)";
+                btnCampos.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerCampos.classList.remove('hidden');
+            } else if (mod === 'cte') {
+                currentData = cteData;
+                currentTitle.innerText = "Módulo 6: Propósitos y Funciones del Consejo Técnico Escolar (CTE)";
+                btnCte.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerCte.classList.remove('hidden');
+            } else {
+                currentData = finesPerfilesData;
+                currentTitle.innerText = "Módulo 7: Fines de la Educación (LGE vs LGDNNA) y Perfil de Egreso (Plan 2022)";
+                btnFinesPerfiles.className = "py-2.5 px-3 rounded-lg font-bold text-xs transition-all duration-200 bg-white text-indigo-900 shadow-sm text-center";
+                containerFinesPerfiles.classList.remove('hidden');
+            }
+            
+            resetGame();
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function initGame() {
+            const bank = document.getElementById('bank');
+            bank.innerHTML = '';
+            
+            // Limpiar zonas de destino
+            document.querySelectorAll('.drop-zone .content-container').forEach(c => c.innerHTML = '');
+
+            shuffle([...currentData]).forEach(item => {
+                const el = document.createElement('div');
+                el.id = `item-${item.id}`;
+                el.className = 'draggable bg-white border border-slate-200 p-3 rounded-xl w-full lg:w-[48%] xl:w-[31%] shadow-sm transition hover:shadow-md';
+                el.draggable = true;
+                el.innerText = item.text;
+                el.dataset.category = item.cat;
+                
+                // Eventos Drag and Drop estándares
+                el.ondragstart = drag;
+                
+                // Evento Click para móviles
+                el.addEventListener('click', handleItemClick);
+                
+                bank.appendChild(el);
+            });
+            updateCounters();
+        }
+
+        // --- GESTIÓN MÓVIL / CLIC DIRECTO ---
+        function handleItemClick(ev) {
+            ev.stopPropagation();
+            const el = ev.currentTarget;
+            
+            if (selectedItemElement) {
+                selectedItemElement.classList.remove('selected-to-move');
+            }
+            
+            if (selectedItemElement === el) {
+                selectedItemElement = null;
+            } else {
+                selectedItemElement = el;
+                selectedItemElement.classList.add('selected-to-move');
+            }
+        }
+
+        function handleZoneClick(ev, zoneId) {
+            if (!selectedItemElement) return;
+
+            let targetZone = document.getElementById(zoneId);
+            if (!targetZone) return;
+
+            const container = targetZone.querySelector('.content-container') || targetZone;
+            container.appendChild(selectedItemElement);
+            
+            selectedItemElement.classList.remove('selected-to-move', 'correct', 'incorrect');
+            
+            if (zoneId === 'bank') {
+                selectedItemElement.classList.remove('w-full');
+                selectedItemElement.classList.add('w-full', 'lg:w-[48%]', 'xl:w-[31%]');
+            } else {
+                selectedItemElement.classList.remove('lg:w-[48%]', 'xl:w-[31%]');
+                selectedItemElement.classList.add('w-full');
+            }
+
+            selectedItemElement = null;
+            updateCounters();
+        }
+
+        // --- DRAG AND DROP TRADICIONAL ---
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function dragEnter(ev) {
+            if (ev.currentTarget.classList.contains('drop-zone')) {
+                ev.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        function dragLeave(ev) {
+            if (ev.currentTarget.classList.contains('drop-zone')) {
+                ev.currentTarget.classList.remove('drag-over');
+            }
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text/plain", ev.target.id);
+            if (selectedItemElement) {
+                selectedItemElement.classList.remove('selected-to-move');
+                selectedItemElement = null;
+            }
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const dataId = ev.dataTransfer.getData("text/plain");
+            const draggedElement = document.getElementById(dataId);
+            if (!draggedElement) return;
+
+            let target = ev.target;
+            while (target && !target.classList.contains('drop-zone') && target.id !== 'bank') {
+                target = target.parentElement;
+            }
+
+            if (target) {
+                target.classList.remove('drag-over');
+                const container = target.querySelector('.content-container') || target;
+                container.appendChild(draggedElement);
+                draggedElement.classList.remove('correct', 'incorrect');
+                
+                if (target.id === 'bank') {
+                    draggedElement.classList.remove('w-full');
+                    draggedElement.classList.add('w-full', 'lg:w-[48%]', 'xl:w-[31%]');
+                } else {
+                    draggedElement.classList.remove('lg:w-[48%]', 'xl:w-[31%]');
+                    draggedElement.classList.add('w-full');
+                }
+            }
+            updateCounters();
+        }
+
+        function updateCounters() {
+            const placedCount = document.querySelectorAll(`.drop-zone .draggable`).length;
+            const bankCount = document.querySelectorAll('#bank .draggable').length;
+            const total = currentData.length;
+
+            document.getElementById('progress-indicator').innerText = `${placedCount}/${total} clasificados`;
+            document.getElementById('elements-left').innerText = bankCount;
+        }
+
+        // --- VALIDACIONES ---
+        function checkResults() {
+            const items = document.querySelectorAll('.draggable');
+            let correctCount = 0;
+            let placedCount = 0;
+
+            items.forEach(item => {
+                let parentZone = item.parentElement;
+                while (parentZone && !parentZone.classList.contains('drop-zone') && parentZone.id !== 'bank') {
+                    parentZone = parentZone.parentElement;
+                }
+
+                if (!parentZone || parentZone.id === 'bank') {
+                    item.classList.remove('correct', 'incorrect');
+                    return;
+                }
+
+                placedCount++;
+                const assignedCategory = parentZone.id;
+                const correctCategory = item.dataset.category;
+
+                if (assignedCategory === correctCategory) {
+                    item.classList.add('correct');
+                    item.classList.remove('incorrect');
+                    correctCount++;
+                } else {
+                    item.classList.add('incorrect');
+                    item.classList.remove('correct');
+                }
+            });
+
+            const total = currentData.length;
+            if (placedCount < total) {
+                showModal(
+                    "Clasificación Incompleta", 
+                    `Has clasificado ${placedCount} de ${total} elementos totales. Te sugerimos ordenar todos antes de presionar el botón de validación.`
+                );
+            } else if (correctCount === total) {
+                showModal(
+                    "¡Excepcional!", 
+                    "¡Perfecto! Has ordenado todas las finalidades, principios, propósitos, fines y rasgos de egreso con absoluta exactitud. Estás listo para dominar el examen teórico."
+                );
+            } else {
+                showModal(
+                    "Resultados parciales", 
+                    `Tienes ${correctCount} correctos de ${total} totales. Revisa los recuadros marcados en rojo y cámbialos al espacio correcto.`
+                );
+            }
+        }
+
+        function showModal(title, msg) {
+            const div = document.createElement('div');
+            div.className = "fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in";
+            div.innerHTML = `
+                <div class="bg-white p-6 md:p-8 rounded-2xl max-w-md w-full text-center shadow-xl border border-slate-100 transform transition-all">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-950 mb-2">${title}</h2>
+                    <p class="text-xs md:text-sm text-slate-600 mb-6 leading-relaxed">${msg}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-indigo-700 transition">Entendido</button>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Inicializar el simulador con el primer módulo por defecto
+        window.onload = function() {
+            switchModule('lge');
+        };
+    </script>
+</body>
+</html>
